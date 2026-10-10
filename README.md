@@ -63,7 +63,7 @@ An unknown team name returns a 404, and the same team on both sides returns a 42
 
 The model is a multinomial logistic regression. Its features are both teams' Elo ratings (plus their difference, absolute difference and average), the importance of the match, whether it is at a neutral venue, a friendly or a World Cup match, and each team's average goals scored, goals conceded and points, and total Elo change, over its last five games.
 
-Compared with my original analysis, this version uses the recorded final score rather than reconstructing the 90-minute result, and it updates Elo ratings after each match rather than in daily batches. It also deals with one problem I found while building the API: at a neutral venue, swapping the order of the two teams changed the predictions by about three percentage points on average. To fix this, each neutral-venue match is included in training twice, once in each order, and predictions at neutral venues are averaged over both orders. The predictions are now symmetric, and a test checks this.
+Compared with my original analysis, this version uses the recorded final score rather than reconstructing the 90-minute result, and it updates Elo ratings after each match rather than in daily batches. At neutral venues, each match is used in training in both team orders and predictions are averaged over both orders, so the order the teams are listed in doesn't change the result.
 
 ## Evaluation
 
@@ -76,11 +76,11 @@ Results are measured with log loss, where lower is better (guessing a third for 
 
 The model beat the Elo-only version in 11 of the 12 years. The improvement is small, about 1%: most of the gain over guessing comes from the Elo ratings themselves.
 
-The yearly test is the more stable of the two, but I used the same years to choose the model in my original analysis, so it is slightly optimistic. The second test uses matches that played no part in choosing the model, so it is a cleaner check, but it is still small and its difference is within noise. (I did look at recent matches when checking the neutral-venue fix, but that change was made to fix the ordering problem, not to improve the score.) This set grows each time the model is retrained on new results, so it also works as a simple way to monitor performance over time.
+The yearly test is the more stable of the two, but I used the same years to choose the model in my original analysis, so it is slightly optimistic. The second test uses matches that played no part in choosing the model, so it is a cleaner check, but it is still small and its difference is within noise. This set grows each time the model is retrained on new results, so it also works as a simple way to monitor performance over time.
 
 ## Limitations
 
-- Predictions only change when the model is retrained. Nothing runs on a schedule.
+- The model is retrained whenever `train.py` is run or the Docker image is rebuilt, which downloads the latest results. In a real deployment this would run on a schedule, for example after each international window.
 - The data comes from a volunteer-maintained dataset. It is usually updated a few days after each international window, but there is no guarantee.
 - Team names must match the dataset exactly (for example "United States", not "USA"). `/teams` lists them, including some defunct teams such as Yugoslavia.
 
